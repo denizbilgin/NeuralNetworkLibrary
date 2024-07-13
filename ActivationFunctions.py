@@ -1,5 +1,5 @@
 import numpy as np
-
+from typing import Union
 
 def relu(num: float) -> float:
     """
@@ -57,20 +57,20 @@ def elu(num: float, alpha: float = 1.0) -> float:
     return max(alpha*(np.exp(num)-1), num)
 
 
-def sigmoid(num: float) -> float:
+def sigmoid(num: Union[float, np.array]) -> float:
     """
     The sigmoid function.
 
     The function outputs values between 0 and 1, making it useful for models that need
     to predict probabilities. The sigmoid function provides a smooth gradient,
     which helps in gradient-based optimization methods.
-    :param num: A float number, typically a neuron's input value.
+    :param num: A float number or numpy array, typically a neuron's input value.
     :return: The sigmoid of the input number.
     """
-    return 1 / (1 + np.e**(-num))
+    return 1 / (1 + np.exp(-num))
 
 
-def softmax(nums: list[float]) -> list[float]:
+def softmax(nums: Union[list[float], np.matrix]) -> list[float]:
     """
     The softmax function.
 
