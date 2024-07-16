@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def mean_squared_error(targets: np.array, predictions: np.array) -> float:
+def mean_squared_error(targets: np.ndarray, predictions: np.ndarray) -> float:
     """
     Calculates the Mean Squared Error (MSE) between target values and predicted values.
 
@@ -11,12 +11,12 @@ def mean_squared_error(targets: np.array, predictions: np.array) -> float:
     :param predictions: Array of predicted values.
     :return: The mean squared error between the targets and predictions.
     """
-    assert len(targets) & len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
+    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
     assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
     return np.sum(np.square(targets - predictions)) / len(targets)
 
 
-def mean_absolute_error(targets: np.array, predictions: np.array) -> float:
+def mean_absolute_error(targets: np.ndarray, predictions: np.ndarray) -> float:
     """
     Calculates the Mean Absolute Error (MAE) between target values and predicted values.
 
@@ -26,12 +26,12 @@ def mean_absolute_error(targets: np.array, predictions: np.array) -> float:
     :param predictions: Array of predicted values.
     :return: The mean absolute error between the targets and predictions.
     """
-    assert len(targets) & len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
+    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
     assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
     return np.sum(np.abs(targets - predictions)) / len(targets)
 
 
-def huber(targets: np.array, predictions: np.array, delta: float = 0.1) -> float:
+def huber(targets: np.ndarray, predictions: np.ndarray, delta: float = 0.1) -> float:
     """
     Calculates the Huber loss between target values and predicted values.
 
@@ -43,7 +43,7 @@ def huber(targets: np.array, predictions: np.array, delta: float = 0.1) -> float
     :param delta: The threshold parameter that defines the point where the loss function changes. Default is 0.1.
     :return: The calculated Huber loss between the targets and predictions.
     """
-    assert len(targets) & len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
+    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
     assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
     absolute_error = np.abs(targets - predictions)
     quadratic = np.minimum(absolute_error, delta)
@@ -51,7 +51,7 @@ def huber(targets: np.array, predictions: np.array, delta: float = 0.1) -> float
     return float(np.mean(0.5 * quadratic ** 2 + delta * linear))
 
 
-def binary_cross_entropy(targets: np.array, predictions: np.array, epsilon: float = 1e-15) -> float:
+def binary_cross_entropy(targets: np.ndarray, predictions: np.ndarray, epsilon: float = 1e-15) -> float:
     """
     Calculates the Binary Cross-Entropy (BCE) loss between target values and predicted probabilities.
 
@@ -64,15 +64,15 @@ def binary_cross_entropy(targets: np.array, predictions: np.array, epsilon: floa
     :param epsilon: mall value to clip the predictions and avoid log(0). Default is 1e-15.
     :return: The calculated binary cross-entropy loss between the targets and predictions.
     """
-    assert len(targets) & len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
+    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
     assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
     assert np.all(np.isin(targets, [0, 1])), "Targets must contain only binary values (0 or 1)."
-    assert np.all((predictions >= 0) & (predictions <= 1)), "Predictions must be in the range [0, 1]."
+    assert np.all((predictions >= 0) and (predictions <= 1)), "Predictions must be in the range [0, 1]."
     predictions = np.clip(predictions, epsilon, 1 - epsilon)
     return -(targets * np.log(predictions) + (1 - targets) * np.log(1 - predictions)).mean()
 
 
-def categorical_cross_entropy(targets: np.array, predictions: np.array, epsilon: float = 1e-15) -> float:
+def categorical_cross_entropy(targets: np.ndarray, predictions: np.ndarray, epsilon: float = 1e-15) -> float:
     """
     Calculates the Categorical Cross-Entropy (CCE) loss between target values and predicted probabilities.
 
@@ -84,9 +84,9 @@ def categorical_cross_entropy(targets: np.array, predictions: np.array, epsilon:
     :param epsilon: Small value to clip the predictions and avoid log(0). Default is 1e-15.
     :return: The calculated categorical cross-entropy loss between the targets and predictions.
     """
-    assert len(targets) & len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
+    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
     assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
-    assert targets.ndim & predictions.ndim == 2, "Targets and predictions arrays must be 2-dimensional (one-hot encoded)."
+    assert targets.ndim and predictions.ndim == 2, "Targets and predictions arrays must be 2-dimensional (one-hot encoded)."
     assert predictions.shape[1] == targets.shape[1], "The number of classes in targets and predictions must match."
     predictions = np.clip(predictions, epsilon, 1 - epsilon)
     return -np.sum(targets * np.log(predictions)) / len(targets)

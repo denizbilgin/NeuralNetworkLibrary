@@ -1,9 +1,12 @@
 import numpy as np
 from ActivationFunctions import *
 from Losses import *
+import time
 
 if __name__ == '__main__':
-    y_true = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    y_pred = np.array([[0.8, 0.1, 0.1], [0.2, 0.7, 0.1], [0.1, 0.2, 0.7]])
+    scores2D = np.array([[1, 2, 3, 6],
+                         [2, 4, 5, 6],
+                         [3, 8, 7, 6]])
+    print(softmax(scores2D))
+    print("========================")
 
-    print(categorical_cross_entropy(y_true, y_pred))
