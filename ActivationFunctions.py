@@ -161,7 +161,7 @@ def softmax(nums: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     :param nums: An n-dimensional numpy array.
     :return: A numpy n-dimensional array of numbers representing the probabilities of classes, and cache.
     """
-    assert len(nums) > 1, "Length of the input (nums) of the softmax function must be greater than 1."
+    assert nums.size > 1, "Length of the input (nums) of the softmax function must be greater than 1."
     pos_nums_exp = np.exp(nums)
     return pos_nums_exp / sum(pos_nums_exp), nums
 

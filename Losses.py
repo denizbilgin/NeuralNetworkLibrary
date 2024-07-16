@@ -11,8 +11,8 @@ def mean_squared_error(targets: np.ndarray, predictions: np.ndarray) -> float:
     :param predictions: Array of predicted values.
     :return: The mean squared error between the targets and predictions.
     """
-    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
-    assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
+    assert targets.size and predictions.size > 0, "The size of targets and predictions arrays must be bigger than 0."
+    assert targets.size == predictions.size, "The size of targets and predictions arrays must be same."
     return np.sum(np.square(targets - predictions)) / len(targets)
 
 
@@ -26,8 +26,8 @@ def mean_absolute_error(targets: np.ndarray, predictions: np.ndarray) -> float:
     :param predictions: Array of predicted values.
     :return: The mean absolute error between the targets and predictions.
     """
-    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
-    assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
+    assert targets.size and predictions.size > 0, "The size of targets and predictions arrays must be bigger than 0."
+    assert targets.size == predictions.size, "The size of targets and predictions arrays must be same."
     return np.sum(np.abs(targets - predictions)) / len(targets)
 
 
@@ -43,8 +43,8 @@ def huber(targets: np.ndarray, predictions: np.ndarray, delta: float = 0.1) -> f
     :param delta: The threshold parameter that defines the point where the loss function changes. Default is 0.1.
     :return: The calculated Huber loss between the targets and predictions.
     """
-    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
-    assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
+    assert targets.size and predictions.size > 0, "The size of targets and predictions arrays must be bigger than 0."
+    assert targets.size == predictions.size, "The size of targets and predictions arrays must be same."
     absolute_error = np.abs(targets - predictions)
     quadratic = np.minimum(absolute_error, delta)
     linear = absolute_error - quadratic
@@ -64,8 +64,8 @@ def binary_cross_entropy(targets: np.ndarray, predictions: np.ndarray, epsilon: 
     :param epsilon: mall value to clip the predictions and avoid log(0). Default is 1e-15.
     :return: The calculated binary cross-entropy loss between the targets and predictions.
     """
-    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
-    assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
+    assert targets.size and predictions.size > 0, "The size of targets and predictions arrays must be bigger than 0."
+    assert targets.size == predictions.size, "The size of targets and predictions arrays must be same."
     assert np.all(np.isin(targets, [0, 1])), "Targets must contain only binary values (0 or 1)."
     assert np.all((predictions >= 0) and (predictions <= 1)), "Predictions must be in the range [0, 1]."
     predictions = np.clip(predictions, epsilon, 1 - epsilon)
@@ -84,8 +84,8 @@ def categorical_cross_entropy(targets: np.ndarray, predictions: np.ndarray, epsi
     :param epsilon: Small value to clip the predictions and avoid log(0). Default is 1e-15.
     :return: The calculated categorical cross-entropy loss between the targets and predictions.
     """
-    assert len(targets) and len(predictions) > 0, "The length of targets and predictions arrays must be bigger than 0."
-    assert len(targets) == len(predictions), "The length of targets and predictions arrays must be same."
+    assert targets.size and predictions.size > 0, "The size of targets and predictions arrays must be bigger than 0."
+    assert targets.size == predictions.size, "The size of targets and predictions arrays must be same."
     assert targets.ndim and predictions.ndim == 2, "Targets and predictions arrays must be 2-dimensional (one-hot encoded)."
     assert predictions.shape[1] == targets.shape[1], "The number of classes in targets and predictions must match."
     predictions = np.clip(predictions, epsilon, 1 - epsilon)
