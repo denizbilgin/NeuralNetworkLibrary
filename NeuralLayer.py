@@ -1,5 +1,3 @@
-import numpy as np
-from typing import Tuple, Callable, Type
 from Utils import *
 from ActivationFunctions import Activation
 
@@ -18,11 +16,10 @@ class NeuralLayer:
         activation_function (Activation): Activation function to be used by all neurons in the layer
     """
 
-    def __init__(self, num_neurons: int, activation_function: Type[Activation]):
+    def __init__(self, num_neurons: int, activation_function: Activation):
         assert num_neurons > 0, "There must be at least 1 neuron in a neural layer."
-        assert issubclass(activation_function, Activation), "Activation function must be an instance of the Activation class."
         self.num_neurons = num_neurons
-        self.activation_function = activation_function()  # Creating an instance of given activation function
+        self.activation_function = activation_function  # Creating an instance of given activation function
         self.layer_input = None
 
     def set_layer_input(self, layer_input: np.ndarray) -> None:

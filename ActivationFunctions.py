@@ -37,7 +37,7 @@ class ReLU(Activation):
         assert nums.size > 0, "Size of the input (nums) of the relu function must be greater than 0."
         return np.maximum(0.0, nums), nums
 
-    def backward(self, d_activation: np.ndarray, cache:np.ndarray) -> np.ndarray:
+    def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """
             The backward pass for the ReLU function.
 
@@ -79,7 +79,7 @@ class Tanh(Activation):
         return d_nums
 
 
-class Leaky_ReLU(Activation):
+class LeakyReLU(Activation):
     def forward(self, nums: np.ndarray, alpha: float = 0.01) -> Tuple[np.ndarray, np.ndarray]:
         """
             The Leaky Rectified Linear Unit (Leaky ReLU) function.
