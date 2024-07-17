@@ -1,6 +1,7 @@
 import numpy as np
-from typing import Tuple, Callable
+from typing import Tuple, Callable, Type
 from Utils import *
+from ActivationFunctions import Activation
 
 
 class NeuralLayer:
@@ -14,14 +15,14 @@ class NeuralLayer:
                                       The variable will be equal to None if you do not call the setter function.
         weights (numpy.nd_array): Weights matrix for the layer: numpy array of shape (size of current layer, size of previous layer)
         biases (numpy.nd_array): Bias vector for the layer, numpy array of shape (size of the current layer, 1)
-        activation_function (Callable): Activation function to be used by all neurons in the layer
+        activation_function (Activation): Activation function to be used by all neurons in the layer
     """
 
-    def __init__(self, num_neurons: int, activation_function: Callable):
+    def __init__(self, num_neurons: int, activation_function: Type[Activation]):
         assert num_neurons > 0, "There must be at least 1 neuron in a neural layer."
-        assert callable(activation_function), "Activation function must be a function, not anything else."
+        assert issubclass(activation_function, Activation), "Activation function must be an instance of the Activation class."
         self.num_neurons = num_neurons
-        self.activation_function = activation_function
+        self.activation_function = activation_function()  # Creating an instance of given activation function
         self.layer_input = None
 
     def set_layer_input(self, layer_input: np.ndarray) -> None:
@@ -55,7 +56,7 @@ class NeuralLayer:
         :return: Result of non-linear calculation that the output of the activation function, and cache of all linear and non-linear calculations
         """
         linear_result, linear_cache = self.linear_forward()
-        activation, activation_cache = self.activation_function(linear_result)
+        activation, activation_cache = self.activation_function.forward(linear_result)
         cache = (linear_cache, activation_cache)
         return activation, cache
 
