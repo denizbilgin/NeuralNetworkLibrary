@@ -8,7 +8,7 @@ class NeuralLayer:
 
     Attributes:
         num_neurons (int): The number of neurons this layer will contain
-        layer_input (numpy.nd_array): Activations from previous layer (or input data): (size of previous layer, number of examples).
+        layer_input (numpy.nd_array): Activations from previous layer (or input data): (number of examples, size of previous layer).
                                       IMPORTANT: To initialize parameters and set layer_input variable you need to use set_layer_input function.
                                       The variable will be equal to None if you do not call the setter function.
         weights (numpy.nd_array): Weights matrix for the layer: numpy array of shape (size of current layer, size of previous layer)
@@ -19,52 +19,102 @@ class NeuralLayer:
     def __init__(self, num_neurons: int, activation_function: Activation):
         assert num_neurons > 0, "There must be at least 1 neuron in a neural layer."
         self.num_neurons = num_neurons
-        self.activation_function = activation_function  # Creating an instance of given activation function
+        self.activation_function = activation_function
         self.layer_input = None
+        self.weights = None
+        self.biases = None
+        self.d_weights = None
+        self.d_biases = None
 
     def set_layer_input(self, layer_input: np.ndarray) -> None:
+        """
+        Sets the input for the layer and initializes the parameters if they haven't been initialized yet.
+        :param layer_input: Input data or activations from the previous layer.
+        """
         if self.layer_input is None:
             self.layer_input = layer_input
             self.__initialize_parameters()  # Also this function initializes weights and biases with random numbers
         else:
             self.layer_input = layer_input
 
-    def __initialize_parameters(self):
-        assert self.layer_input is not None, "Layer input have not been defined yet. Please call the 'set_layer_input' function first."
-        self.weights, self.biases = random_parameter_initialization(self.layer_input.shape[0], self.num_neurons)
+    def __initialize_parameters(self) -> None:
+        """
+        Initializes weights and biases using a random initialization method.
+        """
+        assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
+        self.weights, self.biases = random_parameter_initialization(self.layer_input.shape[1], self.num_neurons)
 
-        assert self.layer_input.shape[0] == self.weights.shape[1], f"The length of inputs and weights must be same."
-        assert self.num_neurons == self.weights.shape[0], f"The number of neurons and the shape of their weights must match. Shape of weights that you entered is {self.weights.shape}, and you entered {self.num_neurons} neurons."
-        assert self.num_neurons == self.biases.shape[0], f"The number of neurons and the shape of their biases must match. Shape of biases that you entered is {self.biases.shape}, and you entered {self.num_neurons} neurons."
+        assert self.layer_input.shape[1] == self.weights.shape[1], f"The length of inputs and weights must be the same."
+        assert self.num_neurons == self.weights.shape[0], f"The number of neurons and the shape of their weights must match. Shape of weights is {self.weights.shape}, and you entered {self.num_neurons} neurons."
+        assert self.num_neurons == self.biases.shape[0], f"The number of neurons and the shape of their biases must match. Shape of biases is {self.biases.shape}, and you entered {self.num_neurons} neurons."
 
     def linear_forward(self) -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
         """
         This function implements the linear part of a layer's forward propagation
-        :return: Result of linear calculation that the input of the activation function also called pre-activation parameter, and cache of the calculation
+        :return: Tuple containing the linear output (pre-activation parameter) and the cache of the calculation.
         """
-        assert self.layer_input is not None, "Layer input have not been defined yet. Please call the 'set_layer_input' function first."
+        assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
         cache = (self.layer_input, self.weights, self.biases)
-        result = np.dot(self.weights, self.layer_input) + self.biases
+        result = np.dot(self.weights, self.layer_input.T) + self.biases
         return result, cache
 
-    def linear_activation_forward(self):
+    def linear_activation_forward(self) -> Tuple[np.ndarray, Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]]:
         """
         This function applies the linear calculation result from the linear_forward function to the activation function.
-        :return: Result of non-linear calculation that the output of the activation function, and cache of all linear and non-linear calculations
+        :return: Tuple containing the activation output and the cache of all calculations.
         """
         linear_result, linear_cache = self.linear_forward()
         activation, activation_cache = self.activation_function.forward(linear_result)
         cache = (linear_cache, activation_cache)
         return activation, cache
 
+    def linear_backward(self, d_nums: np.ndarray, cache: Tuple[np.ndarray, np.ndarray, np.ndarray]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        This function implements the backward propagation for the linear part.
+        :param d_nums: Gradient of the cost with respect to the linear output of the current layer
+        :param cache: Tuple containing values (layer_input, weights, biases) coming from the forward propagation in the current layer
+        :return: Tuple containing gradients with respect to the input, weights, and biases.
+        """
+        activation_previous, weights, biases = cache
+        num_examples = activation_previous.shape[1]
+
+        self.d_weights = (1 / num_examples) * np.dot(d_nums, activation_previous.T)
+        self.d_biases = (1 / num_examples) * np.sum(d_nums, axis=1, keepdims=True)
+        d_activation_previous = np.dot(weights.T, d_nums)
+
+        return d_activation_previous, self.d_weights, self.d_biases
+
+    def linear_activation_backward(self, d_activation: np.ndarray, cache: Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        This function implements the backward propagation with the activation function.
+        :param d_activation: Gradient of the loss with respect to the activation output.
+        :param cache: Cached values from the forward propagation.
+        :return: Tuple containing gradients with respect to the input, weights, and biases.
+        """
+        linear_cache, activation_cache = cache
+        d_nums = self.activation_function.backward(d_activation, activation_cache)
+        d_activation_previous, d_weights, d_biases = self.linear_backward(d_nums, linear_cache)
+        return d_activation_previous, d_weights, d_biases
+
+    def update_parameters(self, learning_rate: float) -> None:
+        """
+        This function updates the weights and biases of the layer using the calculated gradients and learning rate.
+        :param learning_rate: Learning rate to update parameters
+        """
+        self.weights -= learning_rate * self.d_weights
+        self.biases -= learning_rate * self.d_biases
+
     def __str__(self):
+        """
+        Returns a string representation of the NeuralLayer instance.
+        """
         if self.layer_input is None:
-            return (f"The layer uses the {str(self.activation_function).split()[1]} activation function, and consisting of {self.num_neurons} neurons."
-                    f"This is a neural network layer that does not know its inputs. That's why weights and biases matrices are not initialized.\n"
-                    f"If you call 'set_inputs' function you can set inputs and initialize parameters of the layer. Then the layer be able to learn.")
+            return (f"The layer uses the {self.activation_function.__class__.__name__} activation function and consists of {self.num_neurons} neurons. "
+                    f"This is a neural network layer that does not know its inputs. Therefore, weights and biases matrices are not initialized.\n"
+                    f"If you call 'set_layer_input' function, you can set inputs and initialize parameters of the layer. Then the layer will be able to learn.")
         else:
             return (f"This is a neural network layer with {self.weights.size + self.biases.size} parameters\n"
-                    f"that uses the {str(self.activation_function).split()[1]} activation function, and consisting of {self.num_neurons} neurons.\n"
+                    f"that uses the {self.activation_function.__class__.__name__} activation function and consists of {self.num_neurons} neurons.\n"
                     f"Shape of weights array: {self.weights.shape}\n"
                     f"Shape of biases array: {self.biases.shape}\n"
                     f"Shape of inputs array: {self.layer_input.shape}")
