@@ -161,7 +161,7 @@ class BinaryCrossEntropy(Loss):
         assert targets.size > 0 and predictions.size > 0, "The size of targets and predictions arrays must be bigger than 0."
         assert targets.size == predictions.size, "The size of targets and predictions arrays must be same."
         assert np.all(np.isin(targets, [0, 1])), "Targets must contain only binary values (0 or 1)."
-        assert np.all((predictions >= 0) and (predictions <= 1)), "Predictions must be in the range [0, 1]."
+        assert np.all((predictions >= 0)) and np.all((predictions <= 1)), "Predictions must be in the range [0, 1]."
 
         predictions = np.clip(predictions, epsilon, 1 - epsilon)
         loss = -(targets * np.log(predictions) + (1 - targets) * np.log(1 - predictions)).mean()

@@ -1,6 +1,8 @@
+import time
+
 import numpy as np
 from NeuralLayer import NeuralLayer
-from typing import Tuple, List
+from typing import Tuple, List, Union
 from Losses import Loss
 from tqdm import tqdm
 
@@ -15,6 +17,7 @@ class NeuralNetwork:
     :param neural_layers: List of neural layers in the network.
     :param loss_function: Loss function to be used for training.
     :param learning_rate: Learning rate for gradient descent updates.
+    :param training_time: Total time (seconds) spent during training.
     """
     def __init__(self, network_input: np.ndarray, targets: np.ndarray, neural_layers: List[NeuralLayer], loss_function: Loss, learning_rate: float = 0.01):
         assert len(neural_layers) > 0, "The network must have at least one neural layer."
@@ -27,6 +30,7 @@ class NeuralNetwork:
         self.learning_rate = learning_rate
         self.network_output = None
         self.__num_layers = len(self.neural_layers)
+        self.training_time = 0
 
     def network_forward(self) -> List[Tuple]:
         """
@@ -81,7 +85,7 @@ class NeuralNetwork:
         Computes the cost (loss) between predicted output and actual targets.
         :return: Cost value indicating the difference between predicted and actual values
         """
-        cost = self.loss_function.forward(self.targets, self.network_output)
+        cost = self.loss_function.forward(self.targets.T, self.network_output)
         return float(cost)
 
     def train(self, num_epochs: int) -> list[float]:
@@ -91,6 +95,7 @@ class NeuralNetwork:
         """
         progress_bar = tqdm(total=num_epochs, desc="Training", position=0, leave=True)
         costs = []
+        start_time = time.time()
         for epoch in range(num_epochs):
             # Forward propagation
             caches = self.network_forward()
@@ -107,9 +112,33 @@ class NeuralNetwork:
             progress_bar.set_postfix({'Cost': f'{cost:.6f}'})
             progress_bar.update(1)
 
+        self.training_time = time.time() - start_time
+        hours, rem = divmod(self.training_time, 3600)
+        minutes, seconds = divmod(rem, 60)
+
         progress_bar.close()
         print(f"Training completed. Final cost: {costs[-1]}")
+        print(f"Training time: {int(hours):02}:{int(minutes):02}:{seconds:02.0f}")
         return costs
+
+    def predict(self, inputs: np.ndarray, return_caches: bool = False) -> Union[np.ndarray, float, Tuple[np.ndarray, List[Tuple]], Tuple[float, List[Tuple]]]:
+        """
+        Makes a prediction based on the input data.
+        :param inputs: Input data for the prediction. Shape of the input data must be (1, number of features).
+        :param return_caches: If you want to reach caches of forward propagations assign it as True.
+                              Default value is False.
+        :return: Predicted output of the network.
+        """
+        assert inputs.shape[0] == 1, "Only one data point can be sent to the neural network to predict at a time."
+        assert inputs.shape[1] == self.network_input.shape[0], "The feature number of the data point to be predicted must match the feature number of the data on which the neural network model is trained."
+        self.network_input = inputs.T  # Assigning with Transpose to reach shape of (number of features, number of examples)
+        caches = self.network_forward()
+        output = float(self.network_output.flatten()[0]) if self.network_output.shape[1] == 1 else self.network_output
+
+        if return_caches:
+            return output, caches
+        return output
+
     def __str__(self):
         """
         Returns a string representation of the NeuralNetwork object, describing its structure and parameters.
@@ -121,5 +150,5 @@ class NeuralNetwork:
             layer_params_count = layer.weights.size + layer.biases.size
             description += f"\tLayer {i + 1}: {layer.num_neurons} neurons, activation {layer.activation_function.__class__.__name__}(), {layer_params_count} parameters\n"
             total_params += layer_params_count
-        description += f"Total parameters: {total_params}\nInput shape: {self.network_input.shape}\n================================================="
+        description += f"Total parameters: {total_params}\nInput shape: {self.network_input.T.shape}\nOutput shape: {self.network_output.T.shape}\n================================================="
         return description
