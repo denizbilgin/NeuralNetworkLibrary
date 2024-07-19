@@ -1,19 +1,19 @@
-from Utils import *
 from ActivationFunctions import Activation
+import numpy as np
+from typing import Tuple
 
 
 class NeuralLayer:
     """
     This class represents a layer of the neural network structure, containing information such as the number of neurons determined by the user and the activation function to be used.
 
-    Attributes:
-        num_neurons (int): The number of neurons this layer will contain
-        layer_input (numpy.nd_array): Activations from previous layer (or input data): (number of examples, size of previous layer).
+    :param num_neurons: (int) The number of neurons this layer will contain
+    :param layer_input: (numpy.nd_array) Activations from previous layer (or input data): (size of previous layer, number of examples).
                                       IMPORTANT: To initialize parameters and set layer_input variable you need to use set_layer_input function.
                                       The variable will be equal to None if you do not call the setter function.
-        weights (numpy.nd_array): Weights matrix for the layer: numpy array of shape (size of current layer, size of previous layer)
-        biases (numpy.nd_array): Bias vector for the layer, numpy array of shape (size of the current layer, 1)
-        activation_function (Activation): Activation function to be used by all neurons in the layer
+    :param weights: (numpy.nd_array) Weights matrix for the layer: numpy array of shape (size of current layer, size of previous layer)
+    :param biases: (numpy.nd_array) Bias vector for the layer, numpy array of shape (size of the current layer, 1)
+    :param activation_function: (Activation) Activation function to be used by all neurons in the layer
     """
 
     def __init__(self, num_neurons: int, activation_function: Activation):
@@ -33,7 +33,7 @@ class NeuralLayer:
         """
         if self.layer_input is None:
             self.layer_input = layer_input
-            self.__initialize_parameters()  # Also this function initializes weights and biases with random numbers
+            self.__initialize_parameters()
         else:
             self.layer_input = layer_input
 
@@ -42,11 +42,25 @@ class NeuralLayer:
         Initializes weights and biases using a random initialization method.
         """
         assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
-        self.weights, self.biases = random_parameter_initialization(self.layer_input.shape[1], self.num_neurons)
+        self.__random_parameter_initialization()
 
-        assert self.layer_input.shape[1] == self.weights.shape[1], f"The length of inputs and weights must be the same."
+        assert self.layer_input.shape[0] == self.weights.shape[1], f"The length of inputs and weights must be the same."
         assert self.num_neurons == self.weights.shape[0], f"The number of neurons and the shape of their weights must match. Shape of weights is {self.weights.shape}, and you entered {self.num_neurons} neurons."
         assert self.num_neurons == self.biases.shape[0], f"The number of neurons and the shape of their biases must match. Shape of biases is {self.biases.shape}, and you entered {self.num_neurons} neurons."
+
+    def __random_parameter_initialization(self) -> None:
+        """
+        Initializes the weights and biases for the neural network layer using random values.
+
+        The weights are initialized using a normal distribution (Gaussian distribution) with
+        a mean of 0 and a standard deviation of 1, scaled by the square root of the number
+        of input features to maintain a consistent variance (He initialization). This helps
+        to prevent issues related to vanishing or exploding gradients during training.
+
+        The biases are initialized to zero.
+        """
+        self.weights = np.random.randn(self.num_neurons, self.layer_input.shape[0]) / np.sqrt(self.layer_input.shape[0])
+        self.biases = np.zeros((self.num_neurons, 1))
 
     def linear_forward(self) -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
         """
@@ -55,7 +69,7 @@ class NeuralLayer:
         """
         assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
         cache = (self.layer_input, self.weights, self.biases)
-        result = np.dot(self.weights, self.layer_input.T) + self.biases
+        result = np.dot(self.weights, self.layer_input) + self.biases  # Broadcasting for bias
         return result, cache
 
     def linear_activation_forward(self) -> Tuple[np.ndarray, Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]]:

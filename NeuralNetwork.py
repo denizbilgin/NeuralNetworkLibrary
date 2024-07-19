@@ -6,20 +6,22 @@ from tqdm import tqdm
 
 
 class NeuralNetwork:
+    """
+    Initializes the neural network with given input, layers, loss function, targets, and learning rate.
+    :param network_input: Input data for the network.
+                          Please provide a numpy array that has a shape of (number of examples, number of features)
+    :param targets: Target values for the input data.
+                    Please provide a numpy array that has a shape of (number of examples, 1)
+    :param neural_layers: List of neural layers in the network.
+    :param loss_function: Loss function to be used for training.
+    :param learning_rate: Learning rate for gradient descent updates.
+    """
     def __init__(self, network_input: np.ndarray, targets: np.ndarray, neural_layers: List[NeuralLayer], loss_function: Loss, learning_rate: float = 0.01):
-        """
-        Initializes the neural network with given input, layers, loss function, targets, and learning rate.
-        :param network_input: Input data for the network.
-        :param neural_layers: List of neural layers in the network.
-        :param loss_function: Loss function to be used for training.
-        :param targets: Target values for the input data.
-        :param learning_rate: Learning rate for gradient descent updates.
-        """
         assert len(neural_layers) > 0, "The network must have at least one neural layer."
         assert network_input.size > 0 and targets.size > 0, "Network input and targets cannot be empty."
 
-        self.network_input = network_input
-        self.targets = targets
+        self.network_input = network_input.T  # Assigning with Transpose to reach shape of (number of features, number of examples)
+        self.targets = targets.T              # Assigning with Transpose to reach shape of (1, number of examples)
         self.neural_layers = neural_layers
         self.loss_function = loss_function
         self.learning_rate = learning_rate
@@ -52,7 +54,7 @@ class NeuralNetwork:
 
         targets = self.targets.reshape(self.network_output.shape)
 
-        # initializing the backpropagation
+        # Initializing the backpropagation
         d_activation_last = self.loss_function.derivative(targets, self.network_output)
 
         # Getting the last layer's gradients
@@ -80,15 +82,14 @@ class NeuralNetwork:
         :return: Cost value indicating the difference between predicted and actual values
         """
         cost = self.loss_function.forward(self.targets, self.network_output)
-        cost = np.squeeze(cost)
-        return cost
+        return float(cost)
 
     def train(self, num_epochs: int) -> list[float]:
         """
         Trains the neural network using gradient descent for a specified number of epochs.
         :param num_epochs: Number of training epochs
         """
-        progress_bar = tqdm(total=num_epochs, desc="Training", position=0)
+        progress_bar = tqdm(total=num_epochs, desc="Training", position=0, leave=True)
         costs = []
         for epoch in range(num_epochs):
             # Forward propagation
@@ -96,19 +97,18 @@ class NeuralNetwork:
 
             # Compute cost
             cost = self.compute_cost()
-
             # Backward propagation
             self.network_backward(caches)
 
             # Update parameters
             self.update_parameters()
 
+            costs.append(cost)
+            progress_bar.set_postfix({'Cost': f'{cost:.6f}'})
             progress_bar.update(1)
-            progress_bar.set_postfix({'Cost': cost})
 
         progress_bar.close()
         print(f"Training completed. Final cost: {costs[-1]}")
-        print(self)
         return costs
     def __str__(self):
         """

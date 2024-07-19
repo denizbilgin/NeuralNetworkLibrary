@@ -3,12 +3,12 @@ from Losses import *
 from NeuralLayer import NeuralLayer
 from NeuralNetwork import NeuralNetwork
 
+
 if __name__ == '__main__':
     np.random.seed(1)
-    X = np.random.rand(100, 10)  # 100 örnek, her biri 10 özellik
-    Y = np.random.rand(100, 1)  # 100 örnek, her biri 1 hedef değer
+    X = np.random.rand(1000, 3)
+    Y = np.random.rand(1000, 1)
 
-    network_input = np.array([1, 3, 2])
     my_layer = NeuralLayer(
         4,
         ReLU()
@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     my_layer_2 = NeuralLayer(
         1,
-        Sigmoid()
+        ReLU()
     )
 
     my_network = NeuralNetwork(
@@ -26,4 +26,7 @@ if __name__ == '__main__':
         learning_rate=0.01
     )
 
-    my_network.train(10)
+    costs = my_network.train(10000)
+
+# TODO: Mini-batch, stocastic gradient descent, hepsini alan batch
+# TODO: Optimizers
