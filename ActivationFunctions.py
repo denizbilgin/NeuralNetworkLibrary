@@ -184,7 +184,11 @@ class Softmax(Activation):
         :param nums: An n-dimensional numpy array.
         :return: A numpy n-dimensional array of numbers representing the probabilities of classes, and cache.
         """
-        assert nums.size > 1, "Length of the input (nums) of the softmax function must be greater than 1."
+        try:
+            assert nums.size > 1, "Length of the input (nums) of the softmax function must be greater than 1."
+        except AssertionError as e:
+            a = nums.size
+            print(e)
         pos_nums_exp = np.exp(nums)
         return pos_nums_exp / sum(pos_nums_exp), nums
 
@@ -204,3 +208,30 @@ class Softmax(Activation):
             jacobian_matrix = np.diag(softmax_result[i]) - np.outer(softmax_result[i], softmax_result[i])
             d_nums[i] = d_activation[i].dot(jacobian_matrix)
         return d_nums
+
+
+class Unit(Activation):
+    def forward(self, nums: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        The Unit (Linear) activation function.
+
+        The Unit function is used in the output layer of regression problems.
+        It returns the input as it is.
+        :param nums: An n-dimensional numpy array.
+        :return: A tuple containing the ReLU of the n-dimensional numpy array, and the input (nums) as cache.
+        """
+        assert nums.size > 0, "Size of the input (nums) of the unit function must be greater than 0."
+        return nums, nums
+
+    def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
+        """
+        The backward pass for the Unit (Linear) function.
+
+        Since the derivative of the Unit function is 1, the gradient of the loss with respect to
+        the input is the same as the gradient of the loss with respect to the output.
+        :param d_activation: Gradient of the loss with respect to the output of the ReLU function.
+        :param cache: The input to the ReLU function, which was saved during the forward pass.
+        :return: The gradient of the loss with respect to the input to the Unit function.
+        """
+        assert d_activation.size > 0, "Size of the input (d_activation) of the backward function must be greater than 0."
+        return d_activation

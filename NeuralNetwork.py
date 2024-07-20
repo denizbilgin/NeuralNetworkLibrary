@@ -18,6 +18,9 @@ class NeuralNetwork:
     :param loss_function: Loss function to be used for training.
     :param learning_rate: Learning rate for gradient descent updates.
     :param training_time: Total time (seconds) spent during training.
+    :param network_output: It is the output of the last activation function of the network after forward propagation is finished.
+                           This variable also holds the model's predictions about all training examples after the individual model training has finished.
+                           Shape of network output is (1, number of examples)
     """
     def __init__(self, network_input: np.ndarray, targets: np.ndarray, neural_layers: List[NeuralLayer], loss_function: Loss, learning_rate: float = 0.01):
         assert len(neural_layers) > 0, "The network must have at least one neural layer."
@@ -85,7 +88,7 @@ class NeuralNetwork:
         Computes the cost (loss) between predicted output and actual targets.
         :return: Cost value indicating the difference between predicted and actual values
         """
-        cost = self.loss_function.forward(self.targets.T, self.network_output)
+        cost = self.loss_function.forward(self.targets, self.network_output)
         return float(cost)
 
     def train(self, num_epochs: int) -> list[float]:
@@ -146,9 +149,12 @@ class NeuralNetwork:
         """
         description = f"=================================================\nNeural Network with {self.__num_layers} layers:\n"
         total_params = 0
+        total_bytes = 0
         for i, layer in enumerate(self.neural_layers):
             layer_params_count = layer.weights.size + layer.biases.size
             description += f"\tLayer {i + 1}: {layer.num_neurons} neurons, activation {layer.activation_function.__class__.__name__}(), {layer_params_count} parameters\n"
             total_params += layer_params_count
-        description += f"Total parameters: {total_params}\nInput shape: {self.network_input.T.shape}\nOutput shape: {self.network_output.T.shape}\n================================================="
+            total_bytes += layer.weights.nbytes + layer.biases.nbytes
+        total_megabytes = total_bytes / (1024 * 1024)
+        description += f"Total parameters: {total_params}\nMegabytes occupied by parameters: {total_megabytes:.4f} MB\nInput shape: {self.network_input.T.shape}\nOutput shape: {self.network_output.T.shape}\n================================================="
         return description
