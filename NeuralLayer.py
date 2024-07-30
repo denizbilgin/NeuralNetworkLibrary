@@ -16,10 +16,11 @@ class NeuralLayer:
     :param activation_function: (Activation) Activation function to be used by all neurons in the layer
     """
 
-    def __init__(self, num_neurons: int, activation_function: Activation):
+    def __init__(self, num_neurons: int, activation_function: Activation, use_xavier_initialization: bool = True):
         assert num_neurons > 0, "There must be at least 1 neuron in a neural layer."
         self.num_neurons = num_neurons
         self.activation_function = activation_function
+        self.use_xavier_initialization = use_xavier_initialization
         self.layer_input = None
         self.weights = None
         self.biases = None
@@ -44,10 +45,6 @@ class NeuralLayer:
         assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
         self.__random_parameter_initialization()
 
-        assert self.layer_input.shape[0] == self.weights.shape[1], f"The length of inputs and weights must be the same."
-        assert self.num_neurons == self.weights.shape[0], f"The number of neurons and the shape of their weights must match. Shape of weights is {self.weights.shape}, and you entered {self.num_neurons} neurons."
-        assert self.num_neurons == self.biases.shape[0], f"The number of neurons and the shape of their biases must match. Shape of biases is {self.biases.shape}, and you entered {self.num_neurons} neurons."
-
     def __random_parameter_initialization(self) -> None:
         """
         Initializes the weights and biases for the neural network layer using random values.
@@ -59,7 +56,11 @@ class NeuralLayer:
 
         The biases are initialized to zero.
         """
-        self.weights = np.random.randn(self.num_neurons, self.layer_input.shape[0]) / np.sqrt(self.layer_input.shape[0])
+        np.random.seed(1)
+        if self.use_xavier_initialization:
+            self.weights = np.random.randn(self.num_neurons, self.layer_input.shape[0]) * np.sqrt(2 / (self.layer_input.shape[0] + self.num_neurons))
+        else:
+            self.weights = np.random.randn(self.num_neurons, self.layer_input.shape[0]) / np.sqrt(self.layer_input.shape[0])
         self.biases = np.zeros((self.num_neurons, 1))
 
     def linear_forward(self) -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
@@ -96,7 +97,7 @@ class NeuralLayer:
         self.d_biases = (1 / num_examples) * np.sum(d_nums, axis=1, keepdims=True)
         d_activation_previous = np.dot(weights.T, d_nums)
 
-        return d_activation_previous, self.d_weights, self.d_biases
+        return d_activation_previous
 
     def linear_activation_backward(self, d_activation: np.ndarray, cache: Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -107,8 +108,8 @@ class NeuralLayer:
         """
         linear_cache, activation_cache = cache
         d_nums = self.activation_function.backward(d_activation, activation_cache)
-        d_activation_previous, d_weights, d_biases = self.linear_backward(d_nums, linear_cache)
-        return d_activation_previous, d_weights, d_biases
+        d_activation_previous = self.linear_backward(d_nums, linear_cache)
+        return d_activation_previous, self.d_weights, self.d_biases
 
     def update_parameters(self, learning_rate: float) -> None:
         """

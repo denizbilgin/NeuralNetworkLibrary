@@ -35,7 +35,7 @@ class ReLU(Activation):
             :return: A tuple containing the ReLU of the n-dimensional numpy array, and the input (nums) as cache.
             """
         assert nums.size > 0, "Size of the input (nums) of the relu function must be greater than 0."
-        return np.maximum(0.0, nums), nums
+        return np.maximum(0, nums), nums
 
     def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """
@@ -210,7 +210,7 @@ class Softmax(Activation):
         return d_nums
 
 
-class Unit(Activation):
+class Unit(Activation): 
     def forward(self, nums: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
         The Unit (Linear) activation function.

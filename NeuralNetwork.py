@@ -2,9 +2,8 @@ import time
 
 import numpy as np
 from NeuralLayer import NeuralLayer
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Callable
 from Losses import Loss
-from tqdm import tqdm
 
 
 class NeuralNetwork:
@@ -13,25 +12,30 @@ class NeuralNetwork:
     :param network_input: Input data for the network.
                           Please provide a numpy array that has a shape of (number of examples, number of features)
     :param targets: Target values for the input data.
-                    Please provide a numpy array that has a shape of (number of examples, 1)
+                    For binary classification: numpy array with shape (number of examples, 1).
+                    For multiclass classification: numpy array with shape (number of examples, number of classes).
     :param neural_layers: List of neural layers in the network.
     :param loss_function: Loss function to be used for training.
     :param learning_rate: Learning rate for gradient descent updates.
     :param training_time: Total time (seconds) spent during training.
-    :param network_output: It is the output of the last activation function of the network after forward propagation is finished.
-                           This variable also holds the model's predictions about all training examples after the individual model training has finished.
-                           Shape of network output is (1, number of examples)
+    :param network_output: Output of the last activation function of the network after forward propagation.
+                           For binary classification: shape (1, number of examples).
+                           For multiclass classification: shape (number of classes, number of examples).
     """
-    def __init__(self, network_input: np.ndarray, targets: np.ndarray, neural_layers: List[NeuralLayer], loss_function: Loss, learning_rate: float = 0.01):
+    def __init__(self, network_input: np.ndarray, targets: np.ndarray, neural_layers: List[NeuralLayer],
+                 loss_function: Loss, metrics: List[Callable], learning_rate: float = 0.01):
         assert len(neural_layers) > 0, "The network must have at least one neural layer."
         assert network_input.size > 0 and targets.size > 0, "Network input and targets cannot be empty."
+        assert network_input.ndim > 1, f"The shape of the network input must be at least 2-dimensional. You give a shape of {network_input.shape}"
+        assert targets.ndim > 1, f"The shape of the targets must be at least 2-dimensional. You give a shape of {targets.shape}"
 
         self.network_input = network_input.T  # Assigning with Transpose to reach shape of (number of features, number of examples)
-        self.targets = targets.T              # Assigning with Transpose to reach shape of (1, number of examples)
+        self.targets = targets.T              # Assigning with Transpose to reach shape of (number of classes, number of examples)
         self.neural_layers = neural_layers
         self.loss_function = loss_function
         self.learning_rate = learning_rate
         self.network_output = None
+        self.metrics = metrics
         self.__num_layers = len(self.neural_layers)
         self.training_time = 0
 
@@ -81,6 +85,7 @@ class NeuralNetwork:
         Updates the parameters (weights and biases) of each layer using the computed gradients and learning rate.
         """
         for layer in self.neural_layers:
+            assert layer.d_weights is not None and layer.d_biases is not None, "Gradients have not been computed. Please call network_backward first."
             layer.update_parameters(self.learning_rate)
 
     def compute_cost(self) -> float:
@@ -91,15 +96,15 @@ class NeuralNetwork:
         cost = self.loss_function.forward(self.targets, self.network_output)
         return float(cost)
 
-    def train(self, num_epochs: int) -> list[float]:
+    def fit(self, num_epochs: int) -> list[float]:
         """
         Trains the neural network using gradient descent for a specified number of epochs.
         :param num_epochs: Number of training epochs
         """
-        progress_bar = tqdm(total=num_epochs, desc="Training", position=0, leave=True)
         costs = []
         start_time = time.time()
-        for epoch in range(num_epochs):
+
+        for epoch in range(1, num_epochs + 1):
             # Forward propagation
             caches = self.network_forward()
 
@@ -112,35 +117,39 @@ class NeuralNetwork:
             self.update_parameters()
 
             costs.append(cost)
-            progress_bar.set_postfix({'Cost': f'{cost:.6f}'})
-            progress_bar.update(1)
+
+            # Calculate metric scores
+            scores = {metric.__name__: metric(self.targets, self.network_output) for metric in self.metrics}
+            print(f"Epoch {epoch}/{num_epochs} | Loss: {cost:.4f} |", ", ".join([f"{name}: {score:.2f}" for name, score in scores.items()]))
 
         self.training_time = time.time() - start_time
         hours, rem = divmod(self.training_time, 3600)
         minutes, seconds = divmod(rem, 60)
 
-        progress_bar.close()
         print(f"Training completed. Final cost: {costs[-1]}")
         print(f"Training time: {int(hours):02}:{int(minutes):02}:{seconds:02.0f}")
         return costs
 
-    def predict(self, inputs: np.ndarray, return_caches: bool = False) -> Union[np.ndarray, float, Tuple[np.ndarray, List[Tuple]], Tuple[float, List[Tuple]]]:
+    def predict(self, data_point: np.ndarray, return_caches: bool = False) -> Union[np.ndarray, float, Tuple[np.ndarray, List[Tuple]], Tuple[float, List[Tuple]]]:
         """
         Makes a prediction based on the input data.
-        :param inputs: Input data for the prediction. Shape of the input data must be (1, number of features).
+        :param data_point: Input data point for the prediction. Shape of the input data must be (1, number of features).
         :param return_caches: If you want to reach caches of forward propagations assign it as True.
                               Default value is False.
         :return: Predicted output of the network.
         """
-        assert inputs.shape[0] == 1, "Only one data point can be sent to the neural network to predict at a time."
-        assert inputs.shape[1] == self.network_input.shape[0], "The feature number of the data point to be predicted must match the feature number of the data on which the neural network model is trained."
-        self.network_input = inputs.T  # Assigning with Transpose to reach shape of (number of features, number of examples)
+        assert data_point.shape[0] == 1, "Only one data point can be sent to the neural network to predict at a time."
+        assert data_point.shape[1] == self.network_input.shape[0], "The feature number of the data point to be predicted must match the feature number of the data on which the neural network model is trained."
+        self.network_input = data_point.T  # Assigning with Transpose to reach shape of (number of features, number of examples)
         caches = self.network_forward()
         output = float(self.network_output.flatten()[0]) if self.network_output.shape[1] == 1 else self.network_output
 
         if return_caches:
             return output, caches
         return output
+
+    def evaluate(self, inputs, labels) -> List[float]:
+        pass
 
     def __str__(self):
         """
