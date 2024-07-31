@@ -14,9 +14,10 @@ class NeuralLayer:
     :param weights: (numpy.nd_array) Weights matrix for the layer: numpy array of shape (size of current layer, size of previous layer)
     :param biases: (numpy.nd_array) Bias vector for the layer, numpy array of shape (size of the current layer, 1)
     :param activation_function: (Activation) Activation function to be used by all neurons in the layer
+    :param use_xavier_initialization: (bool) A boolean value to determine weight initialization technique for the layer. Default value is False.
     """
 
-    def __init__(self, num_neurons: int, activation_function: Activation, use_xavier_initialization: bool = True):
+    def __init__(self, num_neurons: int, activation_function: Activation, use_xavier_initialization: bool = False):
         assert num_neurons > 0, "There must be at least 1 neuron in a neural layer."
         self.num_neurons = num_neurons
         self.activation_function = activation_function
@@ -34,16 +35,9 @@ class NeuralLayer:
         """
         if self.layer_input is None:
             self.layer_input = layer_input
-            self.__initialize_parameters()
+            self.__random_parameter_initialization()
         else:
             self.layer_input = layer_input
-
-    def __initialize_parameters(self) -> None:
-        """
-        Initializes weights and biases using a random initialization method.
-        """
-        assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
-        self.__random_parameter_initialization()
 
     def __random_parameter_initialization(self) -> None:
         """
@@ -56,6 +50,7 @@ class NeuralLayer:
 
         The biases are initialized to zero.
         """
+        assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
         np.random.seed(1)
         if self.use_xavier_initialization:
             self.weights = np.random.randn(self.num_neurons, self.layer_input.shape[0]) * np.sqrt(2 / (self.layer_input.shape[0] + self.num_neurons))
@@ -70,8 +65,8 @@ class NeuralLayer:
         """
         assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
         cache = (self.layer_input, self.weights, self.biases)
-        result = np.dot(self.weights, self.layer_input) + self.biases  # Broadcasting for bias
-        return result, cache
+        linear_result = np.dot(self.weights, self.layer_input) + self.biases  # Broadcasting for bias
+        return linear_result, cache
 
     def linear_activation_forward(self) -> Tuple[np.ndarray, Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]]:
         """
@@ -83,23 +78,23 @@ class NeuralLayer:
         cache = (linear_cache, activation_cache)
         return activation, cache
 
-    def linear_backward(self, d_nums: np.ndarray, cache: Tuple[np.ndarray, np.ndarray, np.ndarray]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def linear_backward(self, d_linear_output: np.ndarray, cache: Tuple[np.ndarray, np.ndarray, np.ndarray]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         This function implements the backward propagation for the linear part.
-        :param d_nums: Gradient of the cost with respect to the linear output of the current layer
+        :param d_linear_output: Gradient of the cost with respect to the linear output of the current layer
         :param cache: Tuple containing values (layer_input, weights, biases) coming from the forward propagation in the current layer
         :return: Tuple containing gradients with respect to the input, weights, and biases.
         """
-        activation_previous, weights, biases = cache
-        num_examples = activation_previous.shape[1]
+        previous_activation, weights, biases = cache
+        num_examples = previous_activation.shape[1]
 
-        self.d_weights = (1 / num_examples) * np.dot(d_nums, activation_previous.T)
-        self.d_biases = (1 / num_examples) * np.sum(d_nums, axis=1, keepdims=True)
-        d_activation_previous = np.dot(weights.T, d_nums)
+        self.d_weights = (1 / num_examples) * np.dot(d_linear_output, previous_activation.T)
+        self.d_biases = (1 / num_examples) * np.sum(d_linear_output, axis=1, keepdims=True)
+        d_previous_activation = np.dot(weights.T, d_linear_output)
 
-        return d_activation_previous
+        return d_previous_activation
 
-    def linear_activation_backward(self, d_activation: np.ndarray, cache: Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def linear_activation_backward(self, d_activation: np.ndarray, cache: Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]) -> Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray, np.ndarray]:
         """
         This function implements the backward propagation with the activation function.
         :param d_activation: Gradient of the loss with respect to the activation output.
@@ -107,9 +102,9 @@ class NeuralLayer:
         :return: Tuple containing gradients with respect to the input, weights, and biases.
         """
         linear_cache, activation_cache = cache
-        d_nums = self.activation_function.backward(d_activation, activation_cache)
-        d_activation_previous = self.linear_backward(d_nums, linear_cache)
-        return d_activation_previous, self.d_weights, self.d_biases
+        d_linear_output = self.activation_function.backward(d_activation, activation_cache)
+        d_previous_activation = self.linear_backward(d_linear_output, linear_cache)
+        return d_previous_activation, self.d_weights, self.d_biases
 
     def update_parameters(self, learning_rate: float) -> None:
         """

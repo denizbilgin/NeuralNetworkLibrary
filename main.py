@@ -78,7 +78,6 @@ if __name__ == '__main__':
 
     costs = my_network.fit(2500)
 
-# TODO: he initialization'u sisteme ekle
 # TODO: Mini-batch, stocastic gradient descent, batch
 # TODO: Optimizers
 # TODO: Belirli bir epoch'da eğitimi durdurup modeli kaydetmek, sonra modeli load edip tekrar eğitime devam etmek.
