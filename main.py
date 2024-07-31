@@ -78,6 +78,13 @@ if __name__ == '__main__':
 
     costs = my_network.fit(2500)
 
+    data_points = train_x[:2]
+    outputs = my_network.predict(data_points, True)
+    print("Predictions:", outputs)
+    print("Actual Values:", train_y[:2].flatten())
+
+# TODO: Predict fonksiyonu muhtemelen regresyon ve multiclass classification için çalışmayacak onu düzelt
+# TODO: Evaluate fonksiyonunu yaz
 # TODO: Mini-batch, stocastic gradient descent, batch
 # TODO: Optimizers
 # TODO: Belirli bir epoch'da eğitimi durdurup modeli kaydetmek, sonra modeli load edip tekrar eğitime devam etmek.

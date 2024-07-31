@@ -6,7 +6,7 @@ class Activation:
     """
     Abstract base class for activation functions.
     """
-    def forward(self, linear_output: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def forward(self, linear_output: np.ndarray) -> np.ndarray:
         """
         Applies the activation function on the input linear_output.
         :param linear_output: An n-dimensional numpy array.
@@ -25,7 +25,7 @@ class Activation:
 
 
 class ReLU(Activation):
-    def forward(self, linear_output: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def forward(self, linear_output: np.ndarray) -> np.ndarray:
         """
             The Rectified Linear Unit (ReLU) function.
 
@@ -35,7 +35,7 @@ class ReLU(Activation):
             :return: A tuple containing the ReLU of the n-dimensional numpy array, and the input (linear_output) as cache.
             """
         assert linear_output.size > 0, "Size of the input (linear_output) of the relu function must be greater than 0."
-        return np.maximum(0, linear_output), linear_output
+        return np.maximum(0, linear_output)
 
     def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """
@@ -52,7 +52,7 @@ class ReLU(Activation):
 
 
 class Tanh(Activation):
-    def forward(self, linear_output: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def forward(self, linear_output: np.ndarray) -> np.ndarray:
         """
             The hyperbolic tangent (tanh) function.
 
@@ -64,7 +64,7 @@ class Tanh(Activation):
             """
         assert linear_output.size > 0, "Size of the input (linear_output) of the tanh function must be greater than 0."
         pos_nums_exp, neg_nums_exp = np.exp(linear_output), np.exp(-linear_output)
-        return (pos_nums_exp - neg_nums_exp) / (pos_nums_exp + neg_nums_exp), linear_output
+        return (pos_nums_exp - neg_nums_exp) / (pos_nums_exp + neg_nums_exp)
 
     def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """
@@ -80,7 +80,14 @@ class Tanh(Activation):
 
 
 class LeakyReLU(Activation):
-    def forward(self, linear_output: np.ndarray, alpha: float = 0.01) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    :param alpha: A float number representing the slope of the function
+                  for inputs less than zero. Default value is 0.01.
+    """
+    def __init__(self, alpha: float = 0.01):
+        self.alpha = alpha
+
+    def forward(self, linear_output: np.ndarray) -> np.ndarray:
         """
             The Leaky Rectified Linear Unit (Leaky ReLU) function.
 
@@ -88,62 +95,61 @@ class LeakyReLU(Activation):
             unit is not active, which helps to mitigate the "dying ReLU" problem
             where neurons become inactive and stop learning entirely.
             :param linear_output: An n-dimensional numpy array.
-            :param alpha: A float number representing the slope of the function
-                          for inputs less than zero. Default value is 0.01.
             :return: A tuple containing the Leaky ReLU of the n-dimensional numpy array, and the input (linear_output) as cache.
             """
         assert linear_output.size > 0, "Size of the input (linear_output) of the leaky relu function must be greater than 0."
-        return np.maximum(linear_output * alpha, linear_output), linear_output
+        return np.maximum(linear_output * self.alpha, linear_output)
 
-    def backward(self, d_activation: np.ndarray, cache: np.ndarray, alpha: float = 0.01) -> np.ndarray:
+    def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """
         The backward pass for the Leaky ReLU function.
 
         Computes the gradient of the loss with respect to the input to the Leaky ReLU function.
         :param d_activation: Gradient of the loss with respect to the output of the Leaky ReLU function.
         :param cache: The input to the Leaky ReLU function, which was saved during the forward pass.
-        :param alpha: A float number representing the slope of the function
-                      for inputs less than zero. Default value is 0.01.
         :return: The gradient of the loss with respect to the input to the Leaky ReLU function.
         """
         d_linear_output = np.array(d_activation, copy=True)  # Creating a copy to avoid modifying the original array
-        d_linear_output[cache <= 0] *= alpha
+        d_linear_output[cache <= 0] *= self.alpha
         return d_linear_output
 
 
 class ELU(Activation):
-    def forward(self, linear_output: np.ndarray, alpha: float = 1.0) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    :param alpha: A float number representing the scaling factor for
+                  negative inputs. Default value is 1.0.
+    """
+    def __init__(self, alpha: float = 1.0):
+        self.alpha = alpha
+
+    def forward(self, linear_output: np.ndarray) -> np.ndarray:
         """
             The Exponential Linear Unit (ELU) function.
 
             Unlike ReLU, it has a smooth curve for negative inputs, which helps in reducing
             the vanishing gradient problem and making the network more robust.
             :param linear_output: An n-dimensional numpy array.
-            :param alpha: A float number representing the scaling factor for
-                          negative inputs. Default value is 1.0.
             :return: A tuple containing the ELU of the n-dimensional numpy array, and the input (linear_output) as cache.
             """
         assert linear_output.size > 0, "Size of the input (linear_output) of the elu function must be greater than 0."
-        return np.maximum(alpha * (np.exp(linear_output) - 1), linear_output), linear_output
+        return np.maximum(self.alpha * (np.exp(linear_output) - 1), linear_output)
 
-    def backward(self, d_activation: np.ndarray, cache: np.ndarray, alpha: float = 1.0) -> np.ndarray:
+    def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """
             The backward pass for the ELU function.
 
             Computes the gradient of the loss with respect to the input to the ELU function.
             :param d_activation: Gradient of the loss with respect to the output of the Leaky ELU function.
             :param cache: The input to the Leaky ELU function, which was saved during the forward pass.
-            :param alpha: A float number representing the scaling factor for
-                          negative inputs. Default value is 1.0.
             :return: The gradient of the loss with respect to the input to the ELU function.
             """
         d_linear_output = np.array(d_activation, copy=True)  # Creating a copy to avoid modifying the original array
-        d_linear_output[cache <= 0] *= alpha * np.exp(cache)
+        d_linear_output[cache <= 0] *= self.alpha * np.exp(cache)
         return d_linear_output
 
 
 class Sigmoid(Activation):
-    def forward(self, linear_output: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def forward(self, linear_output: np.ndarray) -> np.ndarray:
         """
         The sigmoid function.
 
@@ -154,7 +160,7 @@ class Sigmoid(Activation):
         :return: The sigmoid of the n-dimensional numpy array, and cache.
         """
         assert linear_output.size > 0, "Size of the input (linear_output) of the sigmoid function must be greater than 0."
-        return 1 / (1 + np.exp(-linear_output)), linear_output
+        return 1 / (1 + np.exp(-linear_output))
 
     def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """
@@ -171,7 +177,7 @@ class Sigmoid(Activation):
 
 
 class Softmax(Activation):
-    def forward(self, linear_output: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def forward(self, linear_output: np.ndarray) -> np.ndarray:
         """
         The softmax function.
 
@@ -186,7 +192,7 @@ class Softmax(Activation):
         """
         assert linear_output.size > 1, "Length of the input (linear_output) of the softmax function must be greater than 1."
         pos_nums_exp = np.exp(linear_output)
-        return pos_nums_exp / sum(pos_nums_exp), linear_output
+        return pos_nums_exp / sum(pos_nums_exp)
 
     def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """
@@ -207,7 +213,7 @@ class Softmax(Activation):
 
 
 class Unit(Activation): 
-    def forward(self, linear_output: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def forward(self, linear_output: np.ndarray) -> np.ndarray:
         """
         The Unit (Linear) activation function.
 
@@ -217,7 +223,7 @@ class Unit(Activation):
         :return: A tuple containing the ReLU of the n-dimensional numpy array, and the input (linear_output) as cache.
         """
         assert linear_output.size > 0, "Size of the input (linear_output) of the unit function must be greater than 0."
-        return linear_output, linear_output
+        return linear_output
 
     def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """

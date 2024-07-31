@@ -63,10 +63,10 @@ class NeuralNetwork:
         """
         assert self.network_output is not None, "Output is None right now, you need to call network_forward function first."
 
-        targets = self.targets.reshape(self.network_output.shape)
+        #targets = self.targets.reshape(self.network_output.shape)
 
         # Initializing the backpropagation
-        d_activation_last = self.loss_function.derivative(targets, self.network_output)
+        d_activation_last = self.loss_function.derivative(self.targets, self.network_output)
 
         # Getting the last layer's gradients
         current_cache = caches[self.__num_layers - 1]
@@ -130,23 +130,28 @@ class NeuralNetwork:
         print(f"Training time: {int(hours):02}:{int(minutes):02}:{seconds:02.0f}")
         return costs
 
-    def predict(self, data_point: np.ndarray, return_caches: bool = False) -> Union[np.ndarray, float, Tuple[np.ndarray, List[Tuple]], Tuple[float, List[Tuple]]]:
+    def predict(self, data_points: np.ndarray, return_probabilities: bool = False, threshold: float = 0.5) -> Union[List[float], Tuple[List[float], List[List[Tuple]]]]:
         """
         Makes a prediction based on the input data.
-        :param data_point: Input data point for the prediction. Shape of the input data must be (1, number of features).
-        :param return_caches: If you want to reach caches of forward propagations assign it as True.
-                              Default value is False.
+        :param data_points: Input data point for the prediction. Shape of the input data must be (number of examples, number of features).
+        :param return_probabilities:
+        :param threshold:
         :return: Predicted output of the network.
         """
-        assert data_point.shape[0] == 1, "Only one data point can be sent to the neural network to predict at a time."
-        assert data_point.shape[1] == self.network_input.shape[0], "The feature number of the data point to be predicted must match the feature number of the data on which the neural network model is trained."
-        self.network_input = data_point.T  # Assigning with Transpose to reach shape of (number of features, number of examples)
-        caches = self.network_forward()
-        output = float(self.network_output.flatten()[0]) if self.network_output.shape[1] == 1 else self.network_output
+        assert data_points.ndim > 1, f"The shape of the data points must be at least 2-dimensional. You give a shape of {data_points.shape}"
+        assert data_points.shape[1] == self.network_input.shape[0], "The feature number of the data point to be predicted must match the feature number of the data on which the neural network model is trained."
 
-        if return_caches:
-            return output, caches
-        return output
+        outputs = []
+        for data_point in data_points:
+            data_point = data_point.reshape(1, data_point.shape[0])
+            self.network_input = data_point.T  # Assigning with Transpose to reach shape of (number of features, 1)
+            self.network_forward()
+            output = float(self.network_output.flatten()[0]) if self.network_output.shape[1] == 1 else self.network_output
+            outputs.append(output)
+
+        if not return_probabilities:
+            outputs = [1 if output > threshold else 0 for output in outputs]
+        return outputs
 
     def evaluate(self, inputs, labels) -> List[float]:
         pass

@@ -25,7 +25,7 @@ def accuracy(targets: np.ndarray, predictions: np.ndarray, threshold: float = 0.
     if predictions.shape[0] == 1:
         predictions = (predictions > threshold).astype(int)    # Binary classification
     else:
-        predictions = np.argmax(predictions, axis=0)            # Multi class classification
+        predictions = np.argmax(predictions, axis=0)           # Multi class classification
         targets = np.argmax(targets, axis=0)
 
     return (np.sum(targets == predictions) / targets.size) * 100

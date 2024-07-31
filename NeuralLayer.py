@@ -58,24 +58,24 @@ class NeuralLayer:
             self.weights = np.random.randn(self.num_neurons, self.layer_input.shape[0]) / np.sqrt(self.layer_input.shape[0])
         self.biases = np.zeros((self.num_neurons, 1))
 
-    def linear_forward(self) -> Tuple[np.ndarray, Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    def linear_forward(self) -> np.ndarray:
         """
         This function implements the linear part of a layer's forward propagation
         :return: Tuple containing the linear output (pre-activation parameter) and the cache of the calculation.
         """
         assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
-        cache = (self.layer_input, self.weights, self.biases)
-        linear_result = np.dot(self.weights, self.layer_input) + self.biases  # Broadcasting for bias
-        return linear_result, cache
+        linear_output = np.dot(self.weights, self.layer_input) + self.biases  # Broadcasting for bias
+        return linear_output
 
     def linear_activation_forward(self) -> Tuple[np.ndarray, Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]]:
         """
         This function applies the linear calculation result from the linear_forward function to the activation function.
         :return: Tuple containing the activation output and the cache of all calculations.
         """
-        linear_result, linear_cache = self.linear_forward()
-        activation, activation_cache = self.activation_function.forward(linear_result)
-        cache = (linear_cache, activation_cache)
+        linear_output = self.linear_forward()
+        linear_cache = (self.layer_input, self.weights, self.biases)
+        activation = self.activation_function.forward(linear_output)
+        cache = (linear_cache, linear_output)
         return activation, cache
 
     def linear_backward(self, d_linear_output: np.ndarray, cache: Tuple[np.ndarray, np.ndarray, np.ndarray]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
