@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 from NeuralLayer import NeuralLayer
-from typing import Tuple, List, Union, Callable
+from typing import Tuple, List, Union, Callable, Dict
 from Losses import Loss
 
 
@@ -39,7 +39,7 @@ class NeuralNetwork:
         self.__num_layers = len(self.neural_layers)
         self.training_time = 0
 
-    def network_forward(self) -> List[Tuple]:
+    def __network_forward(self) -> List[Tuple]:
         """
         Performs forward propagation through the network.
         :return: List of caches containing the linear and activation caches for each layer, used during backpropagation
@@ -48,15 +48,16 @@ class NeuralNetwork:
         activation_previous = self.network_input
 
         for i, layer in enumerate(self.neural_layers):
+            # If the weights and bias are not initialized of the current layer, it initializes them; else it updates the layer inputs according to the previous activation
             layer.set_layer_input(activation_previous)
             activation, cache = layer.linear_activation_forward()
-            caches.append(cache)
+            caches.append(cache)    # Store current caches to use them while back propagation
             activation_previous = activation
 
         self.network_output = activation_previous
         return caches
 
-    def network_backward(self, caches: List[Tuple]) -> None:
+    def __network_backward(self, caches: List[Tuple]) -> None:
         """
         Performs backward propagation through the neural network to compute gradients.
         :param caches: List of caches containing linear and activation caches for each layer, obtained from forward propagation
@@ -64,13 +65,12 @@ class NeuralNetwork:
         assert self.network_output is not None, "Output is None right now, you need to call network_forward function first."
 
         #targets = self.targets.reshape(self.network_output.shape)
+        d_activation_last = self.loss_function.derivative(self.targets, self.network_output)    # Initializing the backpropagation
 
-        # Initializing the backpropagation
-        d_activation_last = self.loss_function.derivative(self.targets, self.network_output)
-
-        # Getting the last layer's gradients
-        current_cache = caches[self.__num_layers - 1]
+        current_cache = caches[self.__num_layers - 1]   # Getting the last layer's gradients
         d_activation_previous, d_weights, d_biases = self.neural_layers[self.__num_layers - 1].linear_activation_backward(d_activation_last, current_cache)
+
+        # Determining derivatives of parameters of the last layer
         self.neural_layers[self.__num_layers - 1].d_weights = d_weights
         self.neural_layers[self.__num_layers - 1].d_biases = d_biases
 
@@ -80,7 +80,7 @@ class NeuralNetwork:
             self.neural_layers[i].d_weights = d_weights
             self.neural_layers[i].d_biases = d_biases
 
-    def update_parameters(self) -> None:
+    def __update_parameters(self) -> None:
         """
         Updates the parameters (weights and biases) of each layer using the computed gradients and learning rate.
         """
@@ -88,7 +88,7 @@ class NeuralNetwork:
             assert layer.d_weights is not None and layer.d_biases is not None, "Gradients have not been computed. Please call network_backward first."
             layer.update_parameters(self.learning_rate)
 
-    def compute_cost(self) -> float:
+    def __compute_cost(self) -> float:
         """
         Computes the cost (loss) between predicted output and actual targets.
         :return: Cost value indicating the difference between predicted and actual values
@@ -106,15 +106,16 @@ class NeuralNetwork:
 
         for epoch in range(1, num_epochs + 1):
             # Forward propagation
-            caches = self.network_forward()
+            caches = self.__network_forward()
 
             # Compute cost
-            cost = self.compute_cost()
+            cost = self.__compute_cost()
+
             # Backward propagation
-            self.network_backward(caches)
+            self.__network_backward(caches)
 
             # Update parameters
-            self.update_parameters()
+            self.__update_parameters()
 
             costs.append(cost)
 
@@ -127,16 +128,17 @@ class NeuralNetwork:
         minutes, seconds = divmod(rem, 60)
 
         print(f"Training completed. Final cost: {costs[-1]}")
-        print(f"Training time: {int(hours):02}:{int(minutes):02}:{seconds:02.0f}")
+        print(f"Training duration: {int(hours):02}:{int(minutes):02}:{seconds:02.0f}")
         return costs
 
     def predict(self, data_points: np.ndarray, return_probabilities: bool = False, threshold: float = 0.5) -> Union[List[float], Tuple[List[float], List[List[Tuple]]]]:
         """
         Makes a prediction based on the input data.
-        :param data_points: Input data point for the prediction. Shape of the input data must be (number of examples, number of features).
+        :param data_points: Input data points for the prediction. Shape of the input data must be (number of examples, number of features).
         :param return_probabilities:
-        :param threshold:
-        :return: Predicted output of the network.
+        :param threshold: Threshold for converting predicted probabilities to binary values in binary classification.
+                          Default value is 0.5.
+        :return: Array of predicted outputs of the network.
         """
         assert data_points.ndim > 1, f"The shape of the data points must be at least 2-dimensional. You give a shape of {data_points.shape}"
         assert data_points.shape[1] == self.network_input.shape[0], "The feature number of the data point to be predicted must match the feature number of the data on which the neural network model is trained."
@@ -145,7 +147,7 @@ class NeuralNetwork:
         for data_point in data_points:
             data_point = data_point.reshape(1, data_point.shape[0])
             self.network_input = data_point.T  # Assigning with Transpose to reach shape of (number of features, 1)
-            self.network_forward()
+            self.__network_forward()
             output = float(self.network_output.flatten()[0]) if self.network_output.shape[1] == 1 else self.network_output
             outputs.append(output)
 
@@ -153,8 +155,37 @@ class NeuralNetwork:
             outputs = [1 if output > threshold else 0 for output in outputs]
         return outputs
 
-    def evaluate(self, inputs, labels) -> List[float]:
-        pass
+    def evaluate(self, test_data: np.ndarray, test_labels: np.ndarray) -> Dict:
+        """
+        Evaluates the test data using the trained deep learning model.
+
+        This method assesses the performance of the trained neural network model on the provided test data and test labels. It predicts the labels for the test data, computes various metrics, and returns a dictionary containing the evaluation results.
+
+        :param test_data: Input data points for prediction. The shape of the input data must be (number of examples, number of features).
+        :param test_labels: Target values for the input data. The shape of the input data must be (number of examples, number of classes).
+        :return: A dictionary containing evaluation metric names as keys and their corresponding values as values.
+
+        """
+        assert test_data.shape[1] == self.network_input.shape[0], "The feature number of the data point to be predicted must match the feature number of the data on which the neural network model is trained."
+        assert test_data.ndim > 1, f"The shape of the test data must be at least 2-dimensional. You give a shape of {test_data.shape}"
+        assert test_labels.ndim > 1, f"The shape of the test labels must be at least 2-dimensional. You give a shape of {test_labels.shape}"
+
+        outputs = self.predict(test_data)
+        predictions = np.array(outputs)
+
+        # TODO: burası multiclass classificationda düzeltilecek
+        predictions = predictions.reshape(predictions.shape[0], 1).T  # Assigning with Transpose to reach shape of (number of classes, number of examples)
+        test_labels = test_labels.T                                   # Assigning with Transpose to reach shape of (number of features, number of examples)
+
+        scores = {metric.__name__: round(float(metric(test_labels, predictions)), 2) for metric in self.metrics}
+
+        print("===============================")
+        print(len(outputs), "data points evaluated.")
+        for name, score in scores.items():
+            print(f"\t{name}: {score}")
+        print("===============================")
+        return scores
+
 
     def __str__(self):
         """

@@ -37,7 +37,7 @@ if __name__ == '__main__':
     plt.imshow(train_x_orig[index])
     plt.title(f"{index}th image of train_set")
     print("y = " + str(train_y[index, 0]) + ". It's a " + classes[train_y[index, 0]].decode("utf-8") + " picture.")
-    #plt.show()
+    plt.show()
     print("--------------------------------")
 
     # Getting more info about the data's shapes and sizes
@@ -54,7 +54,8 @@ if __name__ == '__main__':
     print("--------------------------------")
 
     # Reshape the training and test examples (Flattening)
-    train_x_flatten = train_x_orig.reshape(train_x_orig.shape[0], -1)  # The "-1" makes reshape flatten the remaining dimensions
+    train_x_flatten = train_x_orig.reshape(train_x_orig.shape[0],
+                                           -1)  # The "-1" makes reshape flatten the remaining dimensions
     test_x_flatten = test_x_orig.reshape(test_x_orig.shape[0], -1)
     # Standardize data to have feature values between 0 and 1.
     train_x = train_x_flatten / 255.
@@ -63,11 +64,13 @@ if __name__ == '__main__':
     print("test_x's shape: " + str(test_x.shape))
     print("--------------------------------")
 
+    # Determine layers
     hidden1 = NeuralLayer(20, ReLU())
     hidden2 = NeuralLayer(7, ReLU())
     hidden3 = NeuralLayer(5, ReLU())
     output_layer = NeuralLayer(1, Sigmoid())
 
+    # Create neural network
     my_network = NeuralNetwork(
         train_x, train_y,
         [hidden1, hidden2, hidden3, output_layer],
@@ -76,15 +79,32 @@ if __name__ == '__main__':
         0.001
     )
 
-    costs = my_network.fit(2500)
+    # Train the network
+    costs = my_network.fit(2000)
 
-    data_points = train_x[:2]
-    outputs = my_network.predict(data_points, True)
-    print("Predictions:", outputs)
-    print("Actual Values:", train_y[:2].flatten())
+    # Make prediction by the trained model
+    predictions = my_network.predict(test_x)
+
+    # Evaluate the test set
+    my_network.evaluate(test_x, test_y)
+
+    # Test the ANN with our own image
+    my_image = "yumak2.jpg"
+    my_label_y = [1]  # the true class of your image (1 -> cat, 0 -> non-cat)
+
+    file_name = "datasets/CatVNonCat/" + my_image
+    image = np.array(Image.open(file_name).resize((num_px, num_px)))
+    print("Shape of the image before processing is: " + str(image.shape))
+    plt.imshow(image)
+    plt.show()
+    image = image / 255.
+    image = image.reshape((1, num_px * num_px * 3))
+    print("Shape of the image after processing is: " + str(image.shape))
+    prediction = my_network.predict(image, True)[0]
+    print("Probability of being a cat of the image that you uploaded:", round(prediction, 2))
+
 
 # TODO: Predict fonksiyonu muhtemelen regresyon ve multiclass classification için çalışmayacak onu düzelt
-# TODO: Evaluate fonksiyonunu yaz
 # TODO: Mini-batch, stocastic gradient descent, batch
 # TODO: Optimizers
 # TODO: Belirli bir epoch'da eğitimi durdurup modeli kaydetmek, sonra modeli load edip tekrar eğitime devam etmek.

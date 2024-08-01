@@ -28,4 +28,7 @@ def accuracy(targets: np.ndarray, predictions: np.ndarray, threshold: float = 0.
         predictions = np.argmax(predictions, axis=0)           # Multi class classification
         targets = np.argmax(targets, axis=0)
 
+    if ((np.sum(targets == predictions) / targets.size) * 100) > 1000:
+        print("A")
+
     return (np.sum(targets == predictions) / targets.size) * 100
