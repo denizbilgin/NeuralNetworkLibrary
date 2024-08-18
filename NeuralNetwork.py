@@ -1,5 +1,4 @@
 import time
-
 import numpy as np
 from NeuralLayer import NeuralLayer
 from typing import Tuple, List, Union, Callable, Dict
@@ -65,7 +64,7 @@ class NeuralNetwork:
         assert self.network_output is not None, "Output is None right now, you need to call network_forward function first."
 
         #targets = self.targets.reshape(self.network_output.shape)
-        d_activation_last = self.loss_function.derivative(self.targets, self.network_output)    # Initializing the backpropagation
+        d_activation_last = self.loss_function.derivative(self.targets.T, self.network_output.T).T    # Initializing the backpropagation
 
         current_cache = caches[self.__num_layers - 1]   # Getting the last layer's gradients
         d_activation_previous, d_weights, d_biases = self.neural_layers[self.__num_layers - 1].linear_activation_backward(d_activation_last, current_cache)
@@ -93,7 +92,7 @@ class NeuralNetwork:
         Computes the cost (loss) between predicted output and actual targets.
         :return: Cost value indicating the difference between predicted and actual values
         """
-        cost = self.loss_function.forward(self.targets, self.network_output)
+        cost = self.loss_function.forward(self.targets.T, self.network_output.T)
         return float(cost)
 
     def fit(self, num_epochs: int) -> list[float]:

@@ -51,7 +51,7 @@ class NeuralLayer:
         The biases are initialized to zero.
         """
         assert self.layer_input is not None, "Layer input has not been defined yet. Please call the 'set_layer_input' function first."
-        np.random.seed(1)
+        #np.random.seed(1)
         if self.use_xavier_initialization:
             self.weights = np.random.randn(self.num_neurons, self.layer_input.shape[0]) * np.sqrt(2 / (self.layer_input.shape[0] + self.num_neurons))
         else:
@@ -97,7 +97,7 @@ class NeuralLayer:
     def linear_activation_backward(self, d_activation: np.ndarray, cache: Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray]) -> Tuple[Tuple[np.ndarray, np.ndarray, np.ndarray], np.ndarray, np.ndarray]:
         """
         This function implements the backward propagation with the activation function.
-        :param d_activation: Gradient of the loss with respect to the activation output.
+        :param d_activation: Gradient of the loss with respect to the activation output. That must be in the shape of (number of classes, number of examples)
         :param cache: Cached values from the forward propagation.
         :return: Tuple containing gradients with respect to the input, weights, and biases.
         """

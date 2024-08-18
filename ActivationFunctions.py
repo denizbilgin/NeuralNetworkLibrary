@@ -179,7 +179,7 @@ class Sigmoid(Activation):
 class Softmax(Activation):
     def forward(self, linear_output: np.ndarray) -> np.ndarray:
         """
-        The softmax function.
+        The stable softmax function.
 
         The softmax function is commonly used in machine learning, especially
         in the final layer of a neural network for classification tasks. It
@@ -191,8 +191,9 @@ class Softmax(Activation):
         :return: A numpy n-dimensional array of numbers representing the probabilities of classes, and cache.
         """
         assert linear_output.size > 1, "Length of the input (linear_output) of the softmax function must be greater than 1."
-        pos_nums_exp = np.exp(linear_output)
-        return pos_nums_exp / sum(pos_nums_exp)
+        shifted_logits = linear_output - np.max(linear_output, axis=-1, keepdims=True)
+        pos_nums_exp = np.exp(shifted_logits)
+        return pos_nums_exp / np.sum(pos_nums_exp, axis=-1, keepdims=True)
 
     def backward(self, d_activation: np.ndarray, cache: np.ndarray) -> np.ndarray:
         """

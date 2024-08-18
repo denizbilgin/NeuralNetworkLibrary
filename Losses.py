@@ -153,13 +153,15 @@ class BinaryCrossEntropy(Loss):
         It measures the dissimilarity between the true labels and predicted probabilities, and it is sensitive
         to the predicted probabilities being exactly 0 or 1, which can lead to undefined logarithms.
         The epsilon parameter is used to clip the predictions to avoid these issues.
-        :param targets: Array of actual binary target values (0 or 1).
-        :param predictions: Array of predicted probabilities (between 0 and 1).
+        :param targets: Array of actual binary target values (0 or 1). That must be in the shape of (number of examples, number of classes)
+        :param predictions: Array of predicted probabilities (between 0 and 1). That must be in the shape of (number of examples, number of classes)
         :param epsilon: mall value to clip the predictions and avoid log(0). Default is 1e-15.
         :return: The calculated binary cross-entropy loss between the targets and predictions.
         """
         assert targets.size > 0 and predictions.size > 0, "The size of targets and predictions arrays must be bigger than 0."
         assert targets.size == predictions.size, "The size of targets and predictions arrays must be same."
+        assert targets.shape[1] == 1, f"Shape of the targets array must be (number of examples, 1). You entered as {targets.shape}"
+        assert predictions.shape[1] == 1, f"Shape of the predictions array must be (number of examples, 1). You entered as {predictions.shape}"
         assert np.all(np.isin(targets, [0, 1])), "Targets must contain only binary values (0 or 1)."
         assert np.all((predictions >= 0)) and np.all((predictions <= 1)), "Predictions must be in the range [0, 1]."
 
@@ -171,14 +173,16 @@ class BinaryCrossEntropy(Loss):
         """
         Calculates the gradient (derivative) of the Binary Cross-Entropy (BCE) loss function
         with respect to the predictions.
-        :param targets: Array of actual binary target values (0 or 1).
-        :param predictions: Array of predicted probabilities (between 0 and 1).
+        :param targets: Array of actual binary target values (0 or 1).  That must be in the shape of (number of examples, number of classes)
+        :param predictions: Array of predicted probabilities (between 0 and 1).  That must be in the shape of (number of examples, number of classes)
         :param epsilon: mall value to clip the predictions and avoid log(0). Default is 1e-15.
         :return: A numpy array containing the gradients of the BCE loss function with respect to the predictions.
                  This array will have the same shape as the input predictions.
         """
         assert targets.size > 0 and predictions.size > 0, "The size of targets and predictions arrays must be bigger than 0."
         assert targets.size == predictions.size, "The size of targets and predictions arrays must be same."
+        assert targets.shape[1] == 1, f"Shape of the targets array must be (number of examples, 1). You entered as {targets.shape}"
+        assert predictions.shape[1] == 1, f"Shape of the predictions array must be (number of examples, 1). You entered as {predictions.shape}"
 
         predictions = np.clip(predictions, epsilon, 1 - epsilon)
         gradient = (1 - targets) / (1 - predictions) - (targets / predictions)
@@ -196,8 +200,8 @@ class CategoricalCrossEntropy(Loss):
         Categorical Cross-Entropy is a loss function used in multi-class classification problems.
         It measures the dissimilarity between the true class probabilities (one-hot encoded) and the predicted probabilities.
         The epsilon parameter is used to clip the predictions to avoid issues with log(0).
-        :param targets: Array of actual target values in one-hot encoded format.
-        :param predictions: Array of predicted probabilities for each class.
+        :param targets: Array of actual target values in one-hot encoded format. That must be in the shape of (number of examples, number of classes)
+        :param predictions: Array of predicted probabilities for each class. That must be in the shape of (number of examples, number of classes)
         :param epsilon: Small value to clip the predictions and avoid log(0). Default is 1e-15.
         :return: The calculated categorical cross-entropy loss between the targets and predictions.
         """
@@ -214,15 +218,15 @@ class CategoricalCrossEntropy(Loss):
         """
         Calculates the gradient (derivative) of the Categorical Cross-Entropy (CCE) loss function
         with respect to the predictions.
-        :param targets: Array of actual target values in one-hot encoded format.
-        :param predictions: Array of predicted probabilities for each class.
+        :param targets: Array of actual target values in one-hot encoded format. That must be in the shape of (number of examples, number of classes)
+        :param predictions: Array of predicted probabilities for each class. That must be in the shape of (number of examples, number of classes)
         :param epsilon: Small value to clip the predictions and avoid log(0). Default is 1e-15.
         :return: A numpy array containing the gradients of the CCE loss function with respect to the predictions.
                  This array will have the same shape as the input predictions.
         """
         assert targets.size > 0 and predictions.size > 0, "The size of targets and predictions arrays must be bigger than 0."
         assert targets.shape == predictions.shape, "The size of targets and predictions arrays must be the same."
-        assert targets.ndim and predictions.ndim == 2, "Targets and predictions arrays must be 2-dimensional (one-hot encoded)."
+        assert targets.ndim == 2 and predictions.ndim == 2, "Targets and predictions arrays must be 2-dimensional (one-hot encoded)."
         assert predictions.shape[1] == targets.shape[1], "The number of classes in targets and predictions must match."
 
         predictions = np.clip(predictions, epsilon, 1 - epsilon)

@@ -112,3 +112,4 @@ if __name__ == '__main__':
 # TODO: Regresyon düzgün çalışmıyor, büyük ihtimalle optimizer olmadığı için
 # TODO: Accuracy, F1 skoru gibi metrikleri kodla
 # TODO: Görselleştirme fonksiyonları kodla (cost, accuracy..)
+# TODO: Dropout, regularizations
