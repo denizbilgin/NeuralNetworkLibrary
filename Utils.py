@@ -50,3 +50,31 @@ def split_train_test(data: Union[List, np.ndarray, pd.DataFrame], split_ratio: f
     test = data[:test_length]
     train = data[test_length:]
     return train, test
+
+
+def normalize_data(data: Union[List, np.ndarray, pd.DataFrame]) -> Union[np.ndarray, pd.DataFrame, None]:
+    """
+    Normalize the input data to a 0-1 range based on column-wise min-max scaling.
+
+    This function accepts a list, numpy array, or pandas DataFrame as input and normalizes
+    the data such that the values in each column are scaled to fall within the range [0, 1].
+    The normalization is performed by subtracting the minimum value of each column and dividing
+    by the difference between the maximum and minimum values of the column.
+    :param data: The input data to be normalized. It can be a list of lists, a numpy array, or a pandas DataFrame.
+    :return: The normalized data as a numpy array if the input was a list or numpy array, or as a pandas DataFrame if the input was a DataFrame.
+    """
+    if isinstance(data, list):
+        data = np.array(data)
+
+    if isinstance(data, np.ndarray):
+        data_copy = data.copy()
+        min_vals = np.min(data_copy, axis=0)
+        max_vals = np.max(data_copy, axis=0)
+        normalized_data = (data_copy - min_vals) / (max_vals - min_vals)
+        return normalized_data
+    elif isinstance(data, pd.DataFrame):
+        data_copy = data.copy()
+        normalized_data = (data_copy - data_copy.min()) / (data_copy.max() - data_copy.min())
+        return normalized_data
+
+    return None

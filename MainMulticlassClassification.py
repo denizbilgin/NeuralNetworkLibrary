@@ -50,4 +50,8 @@ if __name__ == '__main__':
         0.03
     )
 
+    # Normalize the model
+    x_train = normalize_data(x_train)
+    x_test = normalize_data(x_test)
+    
     my_network.fit(2500)
